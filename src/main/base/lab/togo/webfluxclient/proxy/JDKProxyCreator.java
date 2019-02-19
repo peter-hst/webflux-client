@@ -11,11 +11,14 @@ import org.springframework.cglib.proxy.InvocationHandler;
 import org.springframework.cglib.proxy.Proxy;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -66,7 +69,31 @@ public class JDKProxyCreator implements ProxyCreator {
 //                得到请求的parm和body
                 extractRequestParamAndBody(method, args, methodInfo);
 
+//                提取返回对象信息
+                extractReturnInfo(method, methodInfo);
                 return methodInfo;
+            }
+
+            /**
+             * 提取返回对象信息
+             * @param method
+             * @param methodInfo
+             */
+            private void extractReturnInfo(Method method, MethodInfo methodInfo) {
+//                返回Flux还是Mono
+//                isAssignableFrom 判断类型是否是某个的子类  isInstanceOf 判断实例是否是某个的子类
+                boolean isFlux = method.getReturnType().isAssignableFrom(Flux.class);
+                methodInfo.setReturnFlux(isFlux);
+
+//                得到返回对象的实际类型
+                Class<?> elementType = extractElementType(method.getGenericReturnType());
+                methodInfo.setReturnElementType(elementType);
+            }
+
+//            得到泛型类型的实际类型
+            private Class<?> extractElementType(Type genericReturnType) {
+                Type[] actualTypeArguments = ((ParameterizedType)genericReturnType).getActualTypeArguments();
+                return (Class<?>) actualTypeArguments[0];
             }
 
             private void extractRequestParamAndBody(Method method, Object[] args, MethodInfo methodInfo) {

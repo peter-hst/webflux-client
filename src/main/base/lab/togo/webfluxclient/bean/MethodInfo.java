@@ -37,4 +37,14 @@ public class MethodInfo {
      */
     private Mono<?> body;
 
+    /**
+     * 返回是Flux还是Mono
+     */
+    private boolean returnFlux;
+
+    /**
+     * 返回对象的类型
+     */
+    private Class<?> returnElementType;
+
 }
